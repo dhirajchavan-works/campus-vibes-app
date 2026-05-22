@@ -1,0 +1,93 @@
+version: '3.9'
+
+services:
+  # ─── MySQL Database ───────────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: campusvibes_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE:      campusvibes
+      MYSQL_USER:          ${DB_USER:-cvuser}
+      MYSQL_PASSWORD:      ${DB_PASSWORD:-cvpassword}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./database/seeds/seed_data.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - campusvibes_net
+
+  # ─── phpMyAdmin (optional DB GUI) ────────────────────
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: campusvibes_pma
+    restart: unless-stopped
+    environment:
+      PMA_HOST:     db
+      PMA_USER:     root
+      PMA_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+    ports:
+      - "8080:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - campusvibes_net
+
+  # ─── Node.js Backend API ──────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: campusvibes_api
+    restart: unless-stopped
+    env_file: ./backend/.env
+    environment:
+      DB_HOST:     db
+      DB_USER:     ${DB_USER:-cvuser}
+      DB_PASSWORD: ${DB_PASSWORD:-cvpassword}
+      DB_NAME:     campusvibes
+      NODE_ENV:    development
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - uploads_data:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    command: npm run dev
+    networks:
+      - campusvibes_net
+
+  # ─── Frontend (static via nginx) ─────────────────────
+  frontend:
+    image: nginx:alpine
+    container_name: campusvibes_web
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./docs/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - campusvibes_net
+
+volumes:
+  db_data:
+  uploads_data:
+
+networks:
+  campusvibes_net:
+    driver: bridge
