@@ -26,7 +26,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ══════════════════════════════════════════════
 const DB = {
   users: [
-    { id:1, name:'Priya Sharma',  email:'priya@pune.edu',             password:hash('demo123'),  role:'student', college:'Pune University', year:'3', branch:'Computer Science',       ini:'PS' },
+    { id:1, name:'Chavan Dhiraj',  email:'chavandhiraj.edu',             password:hash('dhiraj@14'),  role:'student', college:'Pune University', year:'3', branch:'Computer Science',       ini:'PS' },
     { id:2, name:'Rahul Mehta',   email:'rahul@iit.edu',              password:hash('demo123'),  role:'student', college:'IIT Bombay',       year:'2', branch:'Mechanical Engineering', ini:'RM' },
     { id:3, name:'Aisha Khan',    email:'aisha@vit.edu',              password:hash('demo123'),  role:'student', college:'VIT Pune',         year:'4', branch:'Electronics',            ini:'AK' },
     { id:4, name:'Dev Patel',     email:'dev@mit.edu',                password:hash('demo123'),  role:'student', college:'MIT Manipal',      year:'1', branch:'Information Technology', ini:'DP' },
